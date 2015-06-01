@@ -1,5 +1,4 @@
-var express = require('express'),
-  http = require("http"),
+var http = require("http"),
   url = require("url"),
   path = require("path"),
   fs = require("fs");
@@ -36,13 +35,48 @@ function getContentTypeFromFile(filename) {
 }
 
 /**
+ * Is this a text based file?
+ * @param filename
+ * @returns {string}
+ */
+function isTextBasedFile(filename) {
+  var extension = filename.substr(filename.lastIndexOf('.') + 1).toLowerCase().trim();
+  switch (extension) {
+    case "html":
+      return true;
+    case "htm":
+      return true;
+    case "js":
+      return true;
+    case "css":
+      return true;
+    case "txt":
+      return true;
+    case "md":
+      return true;
+    case "less":
+      return true;
+    case "sass":
+      return true;
+    case "c":
+      return true;
+    case "cs":
+      return true;
+    case "cpp":
+      return true;
+    default:
+      return false;
+  }
+}
+
+/**
  * Send informative 404
  * @param response
  * @param fl
  */
 function write404(response, fl) {
   response.writeHead(404, {"Content-Type": "text/html"});
-  response.write("<!DOCTYPE html><html><head><title>404 File Not Found - Dev Server</title></head><body>");
+  response.write("<!DOCTYPE html><html><head><title>404 File Not Found - Handydevserver</title></head><body>");
   response.write("<h1>404 Not Found</h1><p>The resource <u><code>" + fl + "</code></u> was not located.</p>\n");
   response.write("<hr>");
   response.write("<p><i>(dev server error page)</i></p>");
@@ -57,7 +91,7 @@ function write404(response, fl) {
  */
 function write500(response, msg) {
   response.writeHead(500, {"Content-Type": "text/html"});
-  response.write("<!DOCTYPE html><html><head><title>404 File Not Found - Dev Server</title></head><body>");
+  response.write("<!DOCTYPE html><html><head><title>404 File Not Found - Handydevserver</title></head><body>");
   response.write("<h1>500 Server Error</h1><p>" + msg + "</p>\n");
   response.write("<hr>");
   response.write("<p><i>(dev server error page)</i></p>");
@@ -86,31 +120,33 @@ function writeGateway(response, isdebug, gatewaytagfolder) {
 }
 
 /**
- * Write the smoke page
+ * Write the directory page
  * @param response
  * @param isdebug
  * @param gatewaytagfolder
  */
-function writeSmokePage(response, isdebug) {
-  try {
+function writeDirPage(response, folderpath, relpath, locations) {
 
-    var pageHTML = "<!DOCTYPE html><html><head><title>Smoke Test Index Page</title></head><body><h1>Smoke Tests</h1><p>Tests:</p><ul>";
-    var smss = fs.readdirSync("./bin/smoketests/");
-    for (var i = 0; i < smss.length; i++) {
-      var fln = smss[i].toString();
-      if (fln.toLowerCase().indexOf('.html') > -1 || fln.toLowerCase().indexOf('.htm') > -1) {
-        pageHTML += "<li><a href=\"smoketests/" + fln + "\">" + fln + "</a></li>";
+  var pageHTML = "<!DOCTYPE html><html><head><title>Directory Listing</title></head><body><h1>Directory Listing</h1><p>Resources:</p><ul>";
+  for (var d = 0; d < locations.length; d++) {
+    if (fs.existsSync(path.normalize(locations[d] + relpath))) {
+      var smss = fs.readdirSync(path.normalize(locations[d] + relpath));
+      for (var i = 0; i < smss.length; i++) {
+        var fln = smss[i].toString(),
+          tmppath = relpath;
+        if (tmppath.substr(-1) == '/') {
+          tmppath = tmppath.substr(0, tmppath.length - 1);
+        }
+
+        pageHTML += "<li><a href=\"" + tmppath + '/' + fln + "\">" + fln + "</a></li>";
       }
     }
-
-    pageHTML += "</ul></body></html>";
-
-    response.writeHead(200, {"Content-Type": "text/html"});
-    response.write(pageHTML);
-    response.end();
-  } catch (e) {
-    write500(response, e.message);
   }
+  pageHTML += "</ul></body></html>";
+
+  response.writeHead(200, {"Content-Type": "text/html"});
+  response.write(pageHTML);
+  response.end();
 }
 
 /**
@@ -120,63 +156,70 @@ function writeSmokePage(response, isdebug) {
  * @param isdebug
  * @param gatewaytagfolder
  */
-function wsEngine(location, port, isdebug, gatewaytagfolder) {
+function wsEngine(locations, port, config) {
+
+  this.paths = locations;
   http.createServer(function (request, response) {
-    if (request.url.toString() == '/gateway.js') {
-      writeGateway(response, isdebug, gatewaytagfolder);
-    } else if (request.url.toString() == '/gateway.min.js') {
-      writeGateway(response, isdebug, gatewaytagfolder);
-    } else if (request.url.toString().toLowerCase() == "/smoke.html") {
-      writeSmokePage(response, isdebug);
+
+    var rurl = request.url.toString(),
+      validUrl = "",
+      didFind = false;
+
+    if (rurl.indexOf('?') > -1) {
+      rurl = rurl.substr(0, rurl.indexOf('?'));
     }
-    else {
-      var uri = url.parse(request.url).pathname,
-        filename = path.join(process.cwd() + (location || '/test'), uri);
-
-      if (request.url.toString().indexOf('smoketests/') > -1) {
-        filename = path.join(process.cwd() + "/bin/", uri);
+    for (var i = 0; i < locations.length; i++) {
+      var furl = locations[i] + rurl;
+      if (fs.existsSync(furl)) {
+        validUrl = furl;
+        didFind = true;
+        break;
       }
-
-      filename = filename.replace(/\/\//g, '/');
-
-      fs.exists(filename, function (exists) {
-        if (!exists) {
-          write404(response, filename);
+    }
+    if (didFind) {
+      fs.readFile(validUrl, "binary", function (err, file) {
+        if (err) {
+          if (err.errno == 28) {
+            writeDirPage(response, validUrl, rurl, locations);
+          } else {
+            write400(response, JSON.stringify(err));
+          }
           return;
         }
 
-        if (fs.statSync(filename).isDirectory()) filename += '/index.html';
-        filename = filename.replace(/\/\//g, '/');
-        if (fs.existsSync(filename)) {
+        response.writeHead(200, {"Content-Type": getContentTypeFromFile(validUrl)});
 
-          fs.readFile(filename, "binary", function (err, file) {
-            if (err) {
-              response.writeHead(500, {"Content-Type": "text/plain"});
-              response.write(err + "\n");
-              response.end();
-              return;
-            }
-
-            response.writeHead(200, {"Content-Type": getContentTypeFromFile(filename)});
-            response.write(file, "binary");
-            response.end();
-          });
-        } else {
-          write404(response, filename);
-          return;
+        if (config.ontextfile && isTextBasedFile(validUrl)) {
+          file = config.ontextfile(validUrl, file);
         }
-
+        response.write(file, "binary");
+        response.end();
       });
+    } else {
+
+      // Still no luck. Let's tell the browser.
+      write404(response, "File " + rurl + " not found.");
+
     }
   }).listen(parseInt(port, 10));
-};
+}
 
+/**
+ * Sets up a new web server
+ * @constructor
+ */
 var WebServer = function () {
 
 };
 
-WebServer.prototype.start = function (port, location, isdebug, gatewaytagfolder) {
-  wsEngine(location, port, !!isdebug, gatewaytagfolder);
+/**
+ * fire it up
+ * @param port
+ * @param location
+ * @param cfg
+ */
+WebServer.prototype.start = function (port, location, cfg) {
+  wsEngine(location, port, cfg);
 };
 
 /**
