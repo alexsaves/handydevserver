@@ -75,7 +75,7 @@ function isTextBasedFile(filename) {
  * @param fl
  */
 function write404(response, fl) {
-  response.writeHead(404, {"Content-Type": "text/html"});
+  response.writeHead(404, {"Content-Type": "text/html", "Access-Control-Allow-Origin": "*"});
   response.write("<!DOCTYPE html><html><head><title>404 File Not Found - Handydevserver</title></head><body>");
   response.write("<h1>404 Not Found</h1><p>The resource <u><code>" + fl + "</code></u> was not located.</p>\n");
   response.write("<hr>");
@@ -90,7 +90,7 @@ function write404(response, fl) {
  * @param msg
  */
 function write500(response, msg) {
-  response.writeHead(500, {"Content-Type": "text/html"});
+  response.writeHead(500, {"Content-Type": "text/html", "Access-Control-Allow-Origin": "*"});
   response.write("<!DOCTYPE html><html><head><title>404 File Not Found - Handydevserver</title></head><body>");
   response.write("<h1>500 Server Error</h1><p>" + msg + "</p>\n");
   response.write("<hr>");
@@ -111,7 +111,7 @@ function writeGateway(response, isdebug, gatewaytagfolder) {
       gatewayjs = fs.readFileSync(process.cwd() + '/tag_gateway/' + gatewaytagfolder + '/GATEWAY_JS/prod/' + gatewayfile),
       snippet = "AnswersProductWhitelist.foresee = " + fs.readFileSync(process.cwd() + '/dist/foresee/gateway/snippet.js') + ";",
       compiledSnippet = gatewayjs.toString().replace(/\/[*]+[^\/]+AnswersProductWhitelist[^#]*#uncomment[^\/]*\//g, snippet);
-    response.writeHead(200, {"Content-Type": "text/javascript"});
+    response.writeHead(200, {"Content-Type": "text/javascript", "Access-Control-Allow-Origin": "*"});
     response.write(compiledSnippet);
     response.end();
   } catch (e) {
@@ -144,7 +144,7 @@ function writeDirPage(response, folderpath, relpath, locations) {
   }
   pageHTML += "</ul></body></html>";
 
-  response.writeHead(200, {"Content-Type": "text/html"});
+  response.writeHead(200, {"Content-Type": "text/html", "Access-Control-Allow-Origin": "*"});
   response.write(pageHTML);
   response.end();
 }
@@ -187,7 +187,7 @@ function wsEngine(locations, port, config) {
           return;
         }
 
-        response.writeHead(200, {"Content-Type": getContentTypeFromFile(validUrl)});
+        response.writeHead(200, {"Content-Type": getContentTypeFromFile(validUrl), "Access-Control-Allow-Origin": "*"});
 
         if (config.ontextfile && isTextBasedFile(validUrl)) {
           file = config.ontextfile(validUrl, file);
