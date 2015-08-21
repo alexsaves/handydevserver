@@ -87,6 +87,21 @@ function write404(response, fl) {
 }
 
 /**
+ * Send informative 400
+ * @param response
+ * @param fl
+ */
+function write400(response) {
+  response.writeHead(400, {"Content-Type": "text/html", "Access-Control-Allow-Origin": "*"});
+  response.write("<!DOCTYPE html><html><head><title>400 Bad Request - Handydevserver</title></head><body>");
+  response.write("<h1>400 Bad Request</h1><p>The server is unable to understand the request </p>\n");
+  response.write("<hr>");
+  response.write("<p><i>(dev server error page)</i></p>");
+  response.write("</body></html>");
+  response.end();
+}
+
+/**
  * Send informative 500
  * @param response
  * @param msg
