@@ -31,6 +31,8 @@ function getContentTypeFromFile(filename) {
       return "image/jpeg";
     case "svg":
       return "image/svg+xml";
+    case "ico":
+      return "image/vnd.microsoft.icon";
     default:
       return "text/html";
   }
@@ -66,9 +68,22 @@ function isTextBasedFile(filename) {
       return true;
     case "cpp":
       return true;
+    case "me":
+      return true;
     default:
       return false;
   }
+}
+
+/**
+ * Spit out the favicon
+ * @param response
+ */
+function writeFavicon(response) {
+  var pth = (__dirname.indexOf('/') > -1) ? '/' : '\\';
+  response.writeHead(200, {"Content-Type": "image/vnd.microsoft.icon", "Access-Control-Allow-Origin": "*"});
+  response.write(fs.readFileSync(__dirname + pth + 'ficon.ico'));
+  response.end();
 }
 
 /**
@@ -77,24 +92,13 @@ function isTextBasedFile(filename) {
  * @param fl
  */
 function write404(response, fl) {
+  if (fl.toLowerCase().indexOf('favicon.ico') > -1) {
+    writeFavicon(response);
+    return;
+  }
   response.writeHead(404, {"Content-Type": "text/html", "Access-Control-Allow-Origin": "*"});
   response.write("<!DOCTYPE html><html><head><title>404 File Not Found - Handydevserver</title></head><body>");
   response.write("<h1>404 Not Found</h1><p>The resource <u><code>" + fl + "</code></u> was not located.</p>\n");
-  response.write("<hr>");
-  response.write("<p><i>(dev server error page)</i></p>");
-  response.write("</body></html>");
-  response.end();
-}
-
-/**
- * Send informative 400
- * @param response
- * @param fl
- */
-function write400(response) {
-  response.writeHead(400, {"Content-Type": "text/html", "Access-Control-Allow-Origin": "*"});
-  response.write("<!DOCTYPE html><html><head><title>400 Bad Request - Handydevserver</title></head><body>");
-  response.write("<h1>400 Bad Request</h1><p>The server is unable to understand the request </p>\n");
   response.write("<hr>");
   response.write("<p><i>(dev server error page)</i></p>");
   response.write("</body></html>");
