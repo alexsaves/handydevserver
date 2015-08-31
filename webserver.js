@@ -203,7 +203,7 @@ function wsEngine(locations, port, config) {
           if (err.errno == 28) {
             writeDirPage(response, validUrl, rurl, locations);
           } else {
-            write400(response, JSON.stringify(err));
+            write404(response, JSON.stringify(err));
           }
           return;
         }
