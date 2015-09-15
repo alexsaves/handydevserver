@@ -194,8 +194,6 @@ function wsEngine(locations, port, config) {
       validUrl = "",
       didFind = false;
 
-    console.log("rurl: " + rurl);
-
     if (rurl.indexOf('?') > -1) {
       rurl = rurl.substr(0, rurl.indexOf('?'));
     }
