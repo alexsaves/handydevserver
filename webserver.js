@@ -48,6 +48,14 @@ function isTextBasedFile(filename) {
   switch (extension) {
     case "html":
       return true;
+    case "xml":
+      return true;
+    case "xslt":
+      return true;
+    case "xhtml":
+      return true;
+    case "now":
+      return true;
     case "htm":
       return true;
     case "js":
@@ -186,6 +194,8 @@ function wsEngine(locations, port, config) {
       validUrl = "",
       didFind = false;
 
+    console.log("rurl: " + rurl);
+
     if (rurl.indexOf('?') > -1) {
       rurl = rurl.substr(0, rurl.indexOf('?'));
     }
@@ -200,7 +210,7 @@ function wsEngine(locations, port, config) {
     if (didFind) {
       fs.readFile(validUrl, "binary", function (err, file) {
         if (err) {
-          if (err.errno == 28) {
+          if (err.errno == 28 || err.errno == -21) {
             writeDirPage(response, validUrl, rurl, locations);
           } else {
             write404(response, JSON.stringify(err));
@@ -208,11 +218,13 @@ function wsEngine(locations, port, config) {
           return;
         }
 
-        response.writeHead(200, {"Content-Type": getContentTypeFromFile(validUrl), "Access-Control-Allow-Origin": "*"});
+        var newHeaders = {"Content-Type": getContentTypeFromFile(validUrl), "Access-Control-Allow-Origin": "*"};
 
         if (config.ontextfile && isTextBasedFile(validUrl)) {
-          file = config.ontextfile(validUrl, file);
+          file = config.ontextfile(validUrl, file, newHeaders);
         }
+
+        response.writeHead(200, newHeaders);
         response.write(file, "binary");
         response.end();
       });

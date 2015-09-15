@@ -20,10 +20,12 @@ handydevserver(
     8080,
    ['./dist', './smoketest', './gateway'],
     {
-      ontextfile: function (filename, contents) {
+      ontextfile: function (filename, contents, headers) {
         if (filename.indexOf('gateway.js') || filename.indexOf('gateway.min.js')) {
           contents = contents.replace(/foo/gi, "bar");
         }
+        // Add some header
+        headers.myHeader = 'some header value';
         return contents;
       }
     });
