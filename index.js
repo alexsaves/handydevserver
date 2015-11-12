@@ -1,7 +1,8 @@
 var webserver = require('./webserver'),
   colors = require('colors'),
   strftime = require('strftime'),
-  path = require('path');
+  path = require('path'),
+  pjson = require('./package.json');
 
 /**
  * Log an error
@@ -16,7 +17,7 @@ var logError = function (eventDetails) {
  * @param eventDetails
  */
 var logEvent = function (eventDetails) {
-  console.log(("[" + strftime('%B %d, %y %H:%M:%S') + "] ").magenta + eventDetails);
+  console.log(("[" + strftime('%B %d, %y %H:%M:%S') + "] ").magenta + eventDetails.toString().grey);
 };
 
 /**
@@ -134,8 +135,11 @@ var isArray = function (arr) {
  * @returns {*|exports}
  */
 function doServerStart(port, dirs, cfg) {
+  if (!!cfg.ssl) {
+    port = 443;
+  }
   var lv = logEvent;
-  lv("Starting web server at " + ("http://localhost:" + port).blue + "...");
+  lv("Starting ".yellow + pjson.name.yellow + " " + pjson.version.toString().yellow + (!!cfg.ssl ? ' securely '.yellow : '') + " at ".yellow + ((!!cfg.ssl ? 'https' : 'http') + "://localhost" + (!!cfg.ssl ? '' : (":" + port))).blue + "...");
   lv("Press CTRL-C to stop.".yellow);
   if (!isArray(dirs)) {
     dirs = [dirst];

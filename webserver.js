@@ -1,7 +1,19 @@
 var http = require("http"),
   url = require("url"),
   path = require("path"),
-  fs = require("fs");
+  fs = require("fs"),
+  https = require('https'),
+  dirString = path.dirname(fs.realpathSync(__filename));
+
+
+// The SSL options
+var ssloptions = {
+  //key: fs.readFileSync(dirString + '/server.key'),
+  //cert: fs.readFileSync(dirString + '/server.crt'),
+  //ca: fs.readFileSync('ca.crt'),
+  requestCert: true,
+  rejectUnauthorized: false
+};
 
 /**
  * Determine a helpful content type
@@ -188,7 +200,7 @@ function writeDirPage(response, folderpath, relpath, locations) {
 function wsEngine(locations, port, config) {
 
   this.paths = locations;
-  http.createServer(function (request, response) {
+  var requestHandler = function (request, response) {
 
     var rurl = request.url.toString(),
       validUrl = "",
@@ -232,7 +244,12 @@ function wsEngine(locations, port, config) {
       write404(response, "File " + rurl + " not found.");
 
     }
-  }).listen(parseInt(port, 10));
+  };
+  if (config.ssl) {
+    https.createServer(ssloptions, requestHandler).listen(parseInt(port, 10));
+  } else {
+    http.createServer(requestHandler).listen(parseInt(port, 10));
+  }
 }
 
 /**
