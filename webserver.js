@@ -5,16 +5,6 @@ var http = require("http"),
   https = require('https'),
   dirString = path.dirname(fs.realpathSync(__filename));
 
-
-// The SSL options
-var ssloptions = {
-  //key: fs.readFileSync(dirString + '/server.key'),
-  //cert: fs.readFileSync(dirString + '/server.crt'),
-  //ca: fs.readFileSync('ca.crt'),
-  requestCert: true,
-  rejectUnauthorized: false
-};
-
 /**
  * Determine a helpful content type
  * @param filename
@@ -246,6 +236,13 @@ function wsEngine(locations, port, config) {
     }
   };
   if (config.ssl) {
+    // The SSL options
+    var ssloptions = {
+      key: fs.readFileSync(config.ssl.keyPath),
+      cert: fs.readFileSync(config.ssl.certPath),
+      requestCert: true,
+      rejectUnauthorized: false
+    };
     https.createServer(ssloptions, requestHandler).listen(parseInt(port, 10));
   } else {
     http.createServer(requestHandler).listen(parseInt(port, 10));
