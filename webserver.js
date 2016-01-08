@@ -3,7 +3,18 @@ var http = require("http"),
   path = require("path"),
   fs = require("fs"),
   https = require('https'),
+  pem = require('pem'),
   dirString = path.dirname(fs.realpathSync(__filename));
+
+
+// The SSL options
+var ssloptions = {
+  //key: fs.readFileSync(dirString + '/server.key'),
+  //cert: fs.readFileSync(dirString + '/server.crt'),
+  //ca: fs.readFileSync('ca.crt'),
+  requestCert: true,
+  rejectUnauthorized: false
+};
 
 /**
  * Determine a helpful content type
@@ -229,21 +240,14 @@ function wsEngine(locations, port, config) {
         response.end();
       });
     } else {
-
       // Still no luck. Let's tell the browser.
       write404(response, "File " + rurl + " not found.");
-
     }
   };
   if (config.ssl) {
-    // The SSL options
-    var ssloptions = {
-      key: fs.readFileSync(config.ssl.keyPath),
-      cert: fs.readFileSync(config.ssl.certPath),
-      requestCert: true,
-      rejectUnauthorized: false
-    };
-    https.createServer(ssloptions, requestHandler).listen(parseInt(port, 10));
+    pem.createCertificate({days: 1, selfSigned: true}, function (err, keys) {
+      https.createServer({key: keys.serviceKey, cert: keys.certificate}, requestHandler).listen(parseInt(port, 10));
+    });
   } else {
     http.createServer(requestHandler).listen(parseInt(port, 10));
   }

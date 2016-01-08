@@ -30,26 +30,8 @@ handydevserver(
       }
     });
 ```
-
-###HTTPS
-To run the server on HTTPS protocol, you just simply need to pass in the SSL cert files path names.
+###SSL
+You can also run an HTTPS server by using the self-signed cert feature.
 ```javascript
-handydevserver(
-    8080,
-   ['./dist', './smoketest', './gateway'],
-    {},
-    ssl: {
-        cert: ".../pathfofile/cert.pem",
-        key: ".../pathtokey/key.pem"
-    }
-    });
+handydevserver(443, [/*dirs*/], { ssl: true });
 ```
-
-You can generate a self signed SSL certificate using OpenSSL. See example below.
-```javascript
-openssl genrsa -out key.pem
-openssl req -new -key key.pem -out csr.pem
-openssl x509 -req -days 9999 -in csr.pem -signkey key.pem -out cert.pem
-rm csr.pem
-```
-
