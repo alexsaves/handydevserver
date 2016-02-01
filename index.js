@@ -135,11 +135,30 @@ var isArray = function (arr) {
  * @returns {*|exports}
  */
 function doServerStart(port, dirs, cfg) {
+  var lv = logEvent;
   if (!!cfg.ssl) {
     port = 443;
   }
-  var lv = logEvent;
-  lv("Starting ".yellow + pjson.name.yellow + " " + pjson.version.toString().yellow + (!!cfg.ssl ? ' securely '.yellow : '') + " at ".yellow + ((!!cfg.ssl ? 'https' : 'http') + "://localhost" + (!!cfg.ssl ? '' : (":" + port))).blue + "...");
+  if (!cfg.latency) {
+    cfg.latency = 0;
+  }
+  if (isArray(cfg.latency)) {
+    if (cfg.latency.length != 2) {
+      cfg.latency = 0;
+      lv("handydevserver error1: latency must be a number or an array of two numbers! Using 0ms latency instead.".red);
+    }
+  } else if ((typeof cfg.latency) != 'number') {
+    lv("handydevserver error2: latency must be a number or an array of two numbers! Using 0ms latency instead.".red);
+  }
+  var latencymsg = "";
+  if (cfg.latency != 0) {
+    if (cfg.latency instanceof Array) {
+      latencymsg = " with latency randomized between ".yellow + cfg.latency[0].toString().yellow + 'ms and '.yellow + cfg.latency[1].toString().yellow + 'ms'.yellow;
+    } else {
+      latencymsg = " with latency of ".yellow + cfg.latency.toString().yellow + 'ms'.yellow;
+    }
+  }
+  lv("Starting ".yellow + pjson.name.yellow + " " + pjson.version.toString().yellow + (!!cfg.ssl ? ' securely'.magenta : '') + " at ".yellow + ((!!cfg.ssl ? 'https' : 'http') + "://localhost" + (!!cfg.ssl ? '' : (":" + port))).blue + latencymsg + "...");
   lv("Press CTRL-C to stop.".yellow);
   if (!isArray(dirs)) {
     dirs = [dirst];

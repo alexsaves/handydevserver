@@ -9,9 +9,6 @@ var http = require("http"),
 
 // The SSL options
 var ssloptions = {
-  //key: fs.readFileSync(dirString + '/server.key'),
-  //cert: fs.readFileSync(dirString + '/server.crt'),
-  //ca: fs.readFileSync('ca.crt'),
   requestCert: true,
   rejectUnauthorized: false
 };
@@ -142,45 +139,37 @@ function write500(response, msg) {
 }
 
 /**
- * Write a gateway.js
- * @param response
- * @param isdebug
- * @param gatewaytagfolder
- */
-function writeGateway(response, isdebug, gatewaytagfolder) {
-  try {
-    var gatewayfile = isdebug ? "gateway.js" : "gateway.min.js",
-      gatewayjs = fs.readFileSync(process.cwd() + '/tag_gateway/' + gatewaytagfolder + '/GATEWAY_JS/prod/' + gatewayfile),
-      snippet = "AnswersProductWhitelist.foresee = " + fs.readFileSync(process.cwd() + '/dist/foresee/gateway/snippet.js') + ";",
-      compiledSnippet = gatewayjs.toString().replace(/\/[*]+[^\/]+AnswersProductWhitelist[^#]*#uncomment[^\/]*\//g, snippet);
-    response.writeHead(200, {"Content-Type": "text/javascript", "Access-Control-Allow-Origin": "*"});
-    response.write(compiledSnippet);
-    response.end();
-  } catch (e) {
-    write500(response, e.message);
-  }
-}
-
-/**
  * Write the directory page
  * @param response
  * @param isdebug
  * @param gatewaytagfolder
  */
-function writeDirPage(response, folderpath, relpath, locations) {
+function writeDirPage(response, folderpath, relpath, locations, config) {
 
   var pageHTML = "<!DOCTYPE html><html><head><title>Directory Listing</title></head><body><h1>Directory Listing</h1><p>Resources:</p><ul>";
   for (var d = 0; d < locations.length; d++) {
     if (fs.existsSync(path.normalize(locations[d] + relpath))) {
       var smss = fs.readdirSync(path.normalize(locations[d] + relpath));
+      var isdir = false;
       for (var i = 0; i < smss.length; i++) {
         var fln = smss[i].toString(),
           tmppath = relpath;
         if (tmppath.substr(-1) == '/') {
           tmppath = tmppath.substr(0, tmppath.length - 1);
         }
+        var doit = true;
+        if (config.ignore.length > 0) {
+          for (var p = 0; p < config.ignore.length; p++) {
+            var stm = config.ignore[p].toString().toLowerCase();
+            if (fln.toLowerCase().indexOf(stm) > -1) {
+              doit = false;
+            }
+          }
+        }
 
-        pageHTML += "<li><a href=\"" + tmppath + '/' + fln + "\">" + fln + "</a></li>";
+        if (doit) {
+          pageHTML += "<li><a href=\"" + tmppath + '/' + fln + "\">" + fln + (isdir ? '/' : '') + "</a></li>";
+        }
       }
     }
   }
@@ -200,6 +189,7 @@ function writeDirPage(response, folderpath, relpath, locations) {
  */
 function wsEngine(locations, port, config) {
 
+  config.ignore = config.ignore || [];
   this.paths = locations;
   var requestHandler = function (request, response) {
 
@@ -222,7 +212,7 @@ function wsEngine(locations, port, config) {
       fs.readFile(validUrl, "binary", function (err, file) {
         if (err) {
           if (err.errno == 28 || err.errno == -21) {
-            writeDirPage(response, validUrl, rurl, locations);
+            writeDirPage(response, validUrl, rurl, locations, config);
           } else {
             write404(response, JSON.stringify(err));
           }
@@ -235,9 +225,23 @@ function wsEngine(locations, port, config) {
           file = config.ontextfile(validUrl, file, newHeaders);
         }
 
-        response.writeHead(200, newHeaders);
-        response.write(file, "binary");
-        response.end();
+        if (config.latency === 0) {
+          response.writeHead(200, newHeaders);
+          response.write(file, "binary");
+          response.end();
+        } else {
+          var dly = 0;
+          if (typeof(config.latency) == 'number') {
+            dly = config.latency;
+          } else {
+            dly = Math.max(0, Math.round((Math.random() * (Math.max(config.latency[1], config.latency[0]) - Math.min(config.latency[1], config.latency[0]))) + Math.min(config.latency[1], config.latency[0])));
+          }
+          setTimeout(function() {
+            response.writeHead(200, newHeaders);
+            response.write(file, "binary");
+            response.end();
+          }, dly);
+        }
       });
     } else {
       // Still no luck. Let's tell the browser.
