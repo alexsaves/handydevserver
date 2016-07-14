@@ -136,9 +136,7 @@ var isArray = function (arr) {
  */
 function doServerStart(port, dirs, cfg) {
   var lv = logEvent;
-  if (!!cfg.ssl) {
-    port = 443;
-  }
+  
   if (!cfg.latency) {
     cfg.latency = 0;
   }
