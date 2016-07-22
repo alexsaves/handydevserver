@@ -156,7 +156,7 @@ function doServerStart(port, dirs, cfg) {
       latencymsg = " with latency of ".yellow + cfg.latency.toString().yellow + 'ms'.yellow;
     }
   }
-  lv("Starting ".yellow + pjson.name.yellow + " " + pjson.version.toString().yellow + (!!cfg.ssl ? ' securely'.magenta : '') + " at ".yellow + ((!!cfg.ssl ? 'https' : 'http') + "://localhost" + (!!cfg.ssl ? '' : (":" + port))).blue + latencymsg + "...");
+  lv("Starting ".yellow + pjson.name.yellow + " " + pjson.version.toString().yellow + (!!cfg.ssl ? ' securely'.magenta : '') + " at ".yellow + ((!!cfg.ssl ? 'https' : 'http') + "://localhost:" + port).blue + latencymsg + "...");
   lv("Press CTRL-C to stop.".yellow);
   if (!isArray(dirs)) {
     dirs = [dirst];
