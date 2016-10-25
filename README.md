@@ -50,6 +50,16 @@ handydevserver(
       }
     });
 ```
+###Custom Headers
+You can add your own custom headers to responses by adding a ``headers`` object to your configuration:
+```javascript
+handydevserver(
+    8080,
+   ['./dist', './smoketest', './gateway'],
+    {
+      headers: {'mycustomheader':'somevalue'}
+    });
+```
 ###SSL
 You can also run an HTTPS server by using the self-signed cert feature. Note: you will need to add an exception to any certificate errors that occur in your browser.
 ```javascript

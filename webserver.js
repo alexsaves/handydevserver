@@ -146,7 +146,7 @@ function write500(response, msg) {
  */
 function writeDirPage(response, folderpath, relpath, locations, config) {
 
-  var pageHTML = "<!DOCTYPE html><html><head><title>Directory Listing</title></head><body><h1>Directory Listing</h1><p>Resources:</p><ul>";
+  var pageHTML = "<!DOCTYPE html><html><head><title>Directory Listing</title></head><body><h1>Directory Listing</h1><p><a href=\"../\">../Back</a><p>Resources:</p><ul>";
   for (var d = 0; d < locations.length; d++) {
     if (fs.existsSync(path.normalize(locations[d] + relpath))) {
       var smss = fs.readdirSync(path.normalize(locations[d] + relpath));
@@ -175,7 +175,13 @@ function writeDirPage(response, folderpath, relpath, locations, config) {
   }
   pageHTML += "</ul></body></html>";
 
-  response.writeHead(200, {"Content-Type": "text/html", "Access-Control-Allow-Origin": "*"});
+  var headers = {"Content-Type": "text/html", "Access-Control-Allow-Origin": "*"};
+  var cheaders = config.headers || {};
+  var xhkeys = Object.keys(cheaders);
+  for (var i = 0; i < xhkeys.length; i++) {
+    headers[xhkeys[i]] = cheaders[xhkeys[i]];
+  }
+  response.writeHead(200, headers);
   response.write(pageHTML);
   response.end();
 }
@@ -226,6 +232,11 @@ function wsEngine(locations, port, config) {
         }
 
         if (config.latency === 0) {
+          var cheaders = config.headers || {};
+          var xhkeys = Object.keys(cheaders);
+          for (var i = 0; i < xhkeys.length; i++) {
+            newHeaders[xhkeys[i]] = cheaders[xhkeys[i]];
+          }
           response.writeHead(200, newHeaders);
           response.write(file, "binary");
           response.end();
@@ -237,6 +248,11 @@ function wsEngine(locations, port, config) {
             dly = Math.max(0, Math.round((Math.random() * (Math.max(config.latency[1], config.latency[0]) - Math.min(config.latency[1], config.latency[0]))) + Math.min(config.latency[1], config.latency[0])));
           }
           setTimeout(function() {
+            var cheaders = config.headers || {};
+            var xhkeys = Object.keys(cheaders);
+            for (var i = 0; i < xhkeys.length; i++) {
+              newHeaders[xhkeys[i]] = cheaders[xhkeys[i]];
+            }
             response.writeHead(200, newHeaders);
             response.write(file, "binary");
             response.end();
