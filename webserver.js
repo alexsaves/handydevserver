@@ -6,6 +6,7 @@ var http = require("http"),
   pem = require('pem'),
   dirString = path.dirname(fs.realpathSync(__filename));
 
+var headContents = "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><style>.isdir {background-image:url('/foldericon.png'); background-repeat:no-repeat; padding-left: 1.6em; background-size:1.3em 1em;} @media only screen and (max-width: 500px) {body {font-size: 100%;}}</style>";
 
 // The SSL options
 var ssloptions = {
@@ -97,6 +98,17 @@ function isTextBasedFile(filename) {
  * Spit out the favicon
  * @param response
  */
+function writeFolderIcon(response) {
+  var pth = (__dirname.indexOf('/') > -1) ? '/' : '\\';
+  response.writeHead(200, {"Content-Type": "image/png", "Access-Control-Allow-Origin": "*"});
+  response.write(fs.readFileSync(__dirname + pth + 'foldericon.png'));
+  response.end();
+}
+
+/**
+ * Spit out the favicon
+ * @param response
+ */
 function writeFavicon(response) {
   var pth = (__dirname.indexOf('/') > -1) ? '/' : '\\';
   response.writeHead(200, {"Content-Type": "image/vnd.microsoft.icon", "Access-Control-Allow-Origin": "*"});
@@ -113,9 +125,12 @@ function write404(response, fl) {
   if (fl.toLowerCase().indexOf('favicon.ico') > -1) {
     writeFavicon(response);
     return;
+  } else if (fl.toLowerCase().indexOf('foldericon.png')) {
+    writeFolderIcon(response);
+    return;
   }
   response.writeHead(404, {"Content-Type": "text/html", "Access-Control-Allow-Origin": "*"});
-  response.write("<!DOCTYPE html><html><head><title>404 File Not Found - Handydevserver</title></head><body>");
+  response.write("<!DOCTYPE html><html><head>" + headContents + "<title>404 File Not Found - Handydevserver</title></head><body>");
   response.write("<h1>404 Not Found</h1><p>The resource <u><code>" + fl + "</code></u> was not located.</p>\n");
   response.write("<hr>");
   response.write("<p><i>(dev server error page)</i></p>");
@@ -130,7 +145,7 @@ function write404(response, fl) {
  */
 function write500(response, msg) {
   response.writeHead(500, {"Content-Type": "text/html", "Access-Control-Allow-Origin": "*"});
-  response.write("<!DOCTYPE html><html><head><title>404 File Not Found - Handydevserver</title></head><body>");
+  response.write("<!DOCTYPE html><html><head>" + headContents + "<title>404 File Not Found - Handydevserver</title></head><body>");
   response.write("<h1>500 Server Error</h1><p>" + msg + "</p>\n");
   response.write("<hr>");
   response.write("<p><i>(dev server error page)</i></p>");
@@ -146,14 +161,22 @@ function write500(response, msg) {
  */
 function writeDirPage(response, folderpath, relpath, locations, config) {
 
-  var pageHTML = "<!DOCTYPE html><html><head><title>Directory Listing</title></head><body><h1>Directory Listing</h1><p><a href=\"../\">../Back</a><p>Resources:</p><ul>";
+  var pageHTML = "<!DOCTYPE html><html><head>" + headContents + "<title>Directory Listing</title></head><body><h1>Directory Listing</h1><p>";
+  if (relpath != '/') {
+    pageHTML += "<a href=\"../\">../Back</a>";
+  }
+  pageHTML += "<p>Resources:</p><ul>";
+
   for (var d = 0; d < locations.length; d++) {
     if (fs.existsSync(path.normalize(locations[d] + relpath))) {
-      var smss = fs.readdirSync(path.normalize(locations[d] + relpath));
+      var startPath = path.normalize(locations[d] + relpath);
+      var smss = fs.readdirSync(startPath);
       var isdir = false;
       for (var i = 0; i < smss.length; i++) {
         var fln = smss[i].toString(),
-          tmppath = relpath;
+          tmppath = relpath,
+          fullpath = path.normalize(startPath + '/' + fln);
+        isdir = fs.lstatSync(fullpath).isDirectory();
         if (tmppath.substr(-1) == '/') {
           tmppath = tmppath.substr(0, tmppath.length - 1);
         }
@@ -168,7 +191,7 @@ function writeDirPage(response, folderpath, relpath, locations, config) {
         }
 
         if (doit) {
-          pageHTML += "<li><a href=\"" + tmppath + '/' + fln + "\">" + fln + (isdir ? '/' : '') + "</a></li>";
+          pageHTML += "<li><a href=\"" + tmppath + '/' + fln + "\" class=\"" + (isdir ? 'isdir' : '') + "\">" + fln + (isdir ? '/' : '') + "</a></li>";
         }
       }
     }
