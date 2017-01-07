@@ -6,7 +6,7 @@ var http = require("http"),
   pem = require('pem'),
   dirString = path.dirname(fs.realpathSync(__filename));
 
-var headContents = "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><style>.isdir {background-image:url('/foldericon.png'); background-repeat:no-repeat; padding-left: 1.6em; background-size:1.3em 1em;} @media only screen and (max-width: 500px) {body {font-size: 100%;}}</style>";
+var headContents = "<meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><style>a {text-decoration:none;} a:hover{text-decoration: underline;} body {font-family: Verdana, Tahoma, Arial; font-size: 90%;} .isdir {background-image:url('/foldericon.png'); background-repeat:no-repeat; padding-left: 1.6em; background-size:1.3em 1em;} @media only screen and (max-width: 500px) {body {font-size: 85%;}}</style>";
 
 // The SSL options
 var ssloptions = {
@@ -125,7 +125,7 @@ function write404(response, fl) {
   if (fl.toLowerCase().indexOf('favicon.ico') > -1) {
     writeFavicon(response);
     return;
-  } else if (fl.toLowerCase().indexOf('foldericon.png')) {
+  } else if (fl.toLowerCase().indexOf('foldericon.png') > -1) {
     writeFolderIcon(response);
     return;
   }
@@ -217,7 +217,6 @@ function writeDirPage(response, folderpath, relpath, locations, config) {
  * @param gatewaytagfolder
  */
 function wsEngine(locations, port, config) {
-
   config.ignore = config.ignore || [];
   this.paths = locations;
   var requestHandler = function (request, response) {
