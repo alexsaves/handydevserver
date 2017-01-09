@@ -172,10 +172,12 @@ function doServerStart(port, dirs, cfg) {
     dirs = [dirst];
   }
   for (var i = 0; i < dirs.length; i++) {
-    if (dirs[i].indexOf('*') > -1) {
-      throw new Error("Invalid folder path: " + dirs[i] + ".");
-    } else {
-      dirs[i] = path.normalize(dirs[i]);
+    if (typeof dirs[i] == 'string') {
+      if (dirs[i].indexOf('*') > -1) {
+        throw new Error("Invalid folder path: " + dirs[i] + ".");
+      } else {
+        dirs[i] = path.normalize(dirs[i]);
+      }
     }
   }
   var WS = new webserver();

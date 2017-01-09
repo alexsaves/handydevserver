@@ -47,6 +47,16 @@ handydevserver(
         // Add some header
         headers.myHeader = 'some header value';
         return contents;
+      },
+      onhtmlfile: function(filename, contents, headers) {
+        // an HTML file is being served
+        // Do whatever changes you want
+        return contents;
+      },
+      onjsfile: function(filename, contents, headers) {
+        // a JavaScript file is being served
+        // Do whatever changes you want
+        return contents;
       }
     });
 ```

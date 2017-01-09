@@ -6,7 +6,7 @@ var http = require("http"),
   pem = require('pem'),
   dirString = path.dirname(fs.realpathSync(__filename));
 
-var headContents = "<meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><style>a {text-decoration:none;} a:hover{text-decoration: underline;} body {font-family: Verdana, Tahoma, Arial; font-size: 90%;} .isdir {background-image:url('/foldericon.png'); background-repeat:no-repeat; padding-left: 1.6em; background-size:1.3em 1em;} @media only screen and (max-width: 500px) {body {font-size: 85%;}}</style>";
+var headContents = "<meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><style>a {text-decoration:none;} a:hover{text-decoration: underline;} body {font-family: Verdana, Tahoma, Arial; font-size: 80%;} .isdir {background-image:url('/foldericon.png'); background-repeat:no-repeat; padding-left: 1.6em; background-size:1.3em 1em;} @media only screen and (max-width: 500px) {body {font-size: 85%;}}</style>";
 
 // The SSL options
 var ssloptions = {
@@ -95,6 +95,40 @@ function isTextBasedFile(filename) {
 }
 
 /**
+ * Is this an html based file?
+ * @param filename
+ * @returns {string}
+ */
+function isHTMLFile(filename) {
+  var extension = filename.substr(filename.lastIndexOf('.') + 1).toLowerCase().trim();
+  switch (extension) {
+    case "html":
+      return true;
+    case "htm":
+      return true;
+    case "xhtml":
+      return true;
+    default:
+      return false;
+  }
+}
+
+/**
+ * Is this a JS file?
+ * @param filename
+ * @returns {string}
+ */
+function isJSFile(filename) {
+  var extension = filename.substr(filename.lastIndexOf('.') + 1).toLowerCase().trim();
+  switch (extension) {
+    case "js":
+      return true;
+    default:
+      return false;
+  }
+}
+
+/**
  * Spit out the favicon
  * @param response
  */
@@ -160,7 +194,7 @@ function write500(response, msg) {
  * @param gatewaytagfolder
  */
 function writeDirPage(response, folderpath, relpath, locations, config) {
-
+  //console.log("DIR PAGE", folderpath, relpath);
   var pageHTML = "<!DOCTYPE html><html><head>" + headContents + "<title>Directory Listing</title></head><body><h1>Directory Listing</h1><p>";
   if (relpath != '/') {
     pageHTML += "<a href=\"../\">../Back</a>";
@@ -168,10 +202,14 @@ function writeDirPage(response, folderpath, relpath, locations, config) {
   pageHTML += "<p>Resources:</p><ul>";
 
   for (var d = 0; d < locations.length; d++) {
-    if (fs.existsSync(path.normalize(locations[d] + relpath))) {
-      var startPath = path.normalize(locations[d] + relpath);
-      var smss = fs.readdirSync(startPath);
-      var isdir = false;
+    var locpart = locations[d];
+    if (!(typeof locpart == 'string')) {
+      locpart = Object.keys(locpart)[0];
+    }
+    if (fs.existsSync(path.normalize(locpart + relpath))) {
+      var startPath = path.normalize(locpart + relpath),
+        smss = fs.readdirSync(startPath),
+        isdir = false;
       for (var i = 0; i < smss.length; i++) {
         var fln = smss[i].toString(),
           tmppath = relpath,
@@ -220,7 +258,6 @@ function wsEngine(locations, port, config) {
   config.ignore = config.ignore || [];
   this.paths = locations;
   var requestHandler = function (request, response) {
-
     var rurl = request.url.toString(),
       validUrl = "",
       didFind = false;
@@ -229,11 +266,26 @@ function wsEngine(locations, port, config) {
       rurl = rurl.substr(0, rurl.indexOf('?'));
     }
     for (var i = 0; i < locations.length; i++) {
-      var furl = locations[i] + rurl;
-      if (fs.existsSync(furl)) {
-        validUrl = furl;
-        didFind = true;
-        break;
+      if (typeof locations[i] == 'string') {
+        var furl = locations[i] + rurl;
+        if (fs.existsSync(furl)) {
+          validUrl = furl;
+          didFind = true;
+          break;
+        }
+      } else {
+        var key = Object.keys(locations[i])[0],
+          val = locations[i][key];
+        if (rurl.length >= val.length && rurl.toLowerCase().substr(0, val.length) == val.toLowerCase()) {
+          var turl = key + rurl.substr(val.length);
+          if (fs.existsSync(turl)) {
+            rurl = turl;
+            validUrl = turl;
+            didFind = true;
+            break;
+          }
+        }
+
       }
     }
     if (didFind) {
@@ -252,10 +304,19 @@ function wsEngine(locations, port, config) {
         if (config.ontextfile && isTextBasedFile(validUrl)) {
           file = config.ontextfile(validUrl, file, newHeaders);
         }
-
+        if (isHTMLFile(validUrl)) {
+          // IE privacy policy. Needed for IE8.
+          newHeaders.P3P = 'CP="CURa ADMa DEVa CONo HISa OUR IND DSP ALL COR"';
+          if (config.onhtmlfile) {
+            file = config.onhtmlfile(validUrl, file, newHeaders);
+          }
+        }
+        if (config.onjsfile && isJSFile(validUrl)) {
+          file = config.onjsfile(validUrl, file, newHeaders);
+        }
         if (config.latency === 0) {
-          var cheaders = config.headers || {};
-          var xhkeys = Object.keys(cheaders);
+          var cheaders = config.headers || {},
+            xhkeys = Object.keys(cheaders);
           for (var i = 0; i < xhkeys.length; i++) {
             newHeaders[xhkeys[i]] = cheaders[xhkeys[i]];
           }
