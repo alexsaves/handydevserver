@@ -1,6 +1,6 @@
 {
   "name": "handydevserver",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "A simple web server with handy hooks for setting up test environments for web development.",
   "main": "index.js",
   "scripts": {
@@ -21,7 +21,7 @@
   "license": "MIT",
   "dependencies": {
     "colors": "^1.1.2",
-    "strftime": "^0.10.0",
-    "pem": "^1.9.4"
+    "pem": "^1.9.7",
+    "strftime": "^0.10.0"
   }
 }

@@ -71,6 +71,8 @@ function isTextBasedFile(filename) {
       return true;
     case "js":
       return true;
+    case "jsx":
+      return true;
     case "css":
       return true;
     case "txt":
@@ -260,10 +262,26 @@ function wsEngine(locations, port, config) {
   var requestHandler = function (request, response) {
     var rurl = request.url.toString(),
       validUrl = "",
+      query = "",
       didFind = false;
 
     if (rurl.indexOf('?') > -1) {
+      query = rurl.substr(rurl.indexOf('?') + 1).split('&');
       rurl = rurl.substr(0, rurl.indexOf('?'));
+      if (query && query.length > 0) {
+        var qargs = {};
+        for (var b = 0; b < query.length; b++) {
+          query[b] = query[b].split('=');
+          for (var h = 0; h < query[b].length; h++) {
+            qargs[decodeURIComponent(query[b][0])] = decodeURIComponent(query[b][1] || '');            
+          }
+        }
+        query = qargs;
+      } else {
+        query = {};
+      }
+    } else {
+      query = {};
     }
     for (var i = 0; i < locations.length; i++) {
       if (typeof locations[i] == 'string') {
@@ -302,7 +320,7 @@ function wsEngine(locations, port, config) {
         var newHeaders = {"Content-Type": getContentTypeFromFile(validUrl), "Access-Control-Allow-Origin": "*"};
 
         if (config.ontextfile && isTextBasedFile(validUrl)) {
-          file = config.ontextfile(validUrl, file, newHeaders);
+          file = config.ontextfile(validUrl, file, newHeaders, query);
         }
         if (isHTMLFile(validUrl)) {
           // IE privacy policy. Needed for IE8.
