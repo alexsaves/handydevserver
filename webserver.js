@@ -4,7 +4,10 @@ var http = require("http"),
   fs = require("fs"),
   https = require('https'),
   pem = require('pem'),
-  dirString = path.dirname(fs.realpathSync(__filename));
+  dirString = path.dirname(fs.realpathSync(__filename)),
+  appRootDir = require('app-root-dir').get();
+
+  var dirSlash = appRootDir.indexOf("/") > -1 ? "/" : "\\";
 
 var headContents = "<meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><style>a {text-decoration:none;} a:hover{text-decoration: underline;} body {font-family: Verdana, Tahoma, Arial; font-size: 80%;} .isdir {background-image:url('/foldericon.png'); background-repeat:no-repeat; padding-left: 1.6em; background-size:1.3em 1em;} @media only screen and (max-width: 500px) {body {font-size: 85%;}}</style>";
 
@@ -258,6 +261,7 @@ function writeDirPage(response, folderpath, relpath, locations, config) {
  */
 function wsEngine(locations, port, config) {
   config.ignore = config.ignore || [];
+  //console.log("**** LOCS", locations);
   this.paths = locations;
   var requestHandler = function (request, response) {
     var rurl = request.url.toString(),
@@ -283,9 +287,16 @@ function wsEngine(locations, port, config) {
     } else {
       query = {};
     }
+    
     for (var i = 0; i < locations.length; i++) {
+      //console.log("loc", locations[i]);
+      //console.log("rurl", rurl);
       if (typeof locations[i] == 'string') {
-        var furl = locations[i] + rurl;
+        
+        var furl = appRootDir + "\\" + locations[i] + rurl;
+        furl = furl.replace("/", dirSlash).replace("\\", dirSlash);
+        //console.log("* LOOKING AT ", furl);
+        //console.log("EXIST?", fs.existsSync(furl));
         if (fs.existsSync(furl)) {
           validUrl = furl;
           didFind = true;
@@ -306,10 +317,13 @@ function wsEngine(locations, port, config) {
 
       }
     }
+    //console.log("didFind", didFind);
     if (didFind) {
       fs.readFile(validUrl, "binary", function (err, file) {
+        //console.log("valid:", validUrl);
+        //console.log("err", err);
         if (err) {
-          if (err.errno == 28 || err.errno == -21) {
+          if (err.errno == 28 || err.errno == -21 || err.errno == -4068) {
             writeDirPage(response, validUrl, rurl, locations, config);
           } else {
             write404(response, JSON.stringify(err));
