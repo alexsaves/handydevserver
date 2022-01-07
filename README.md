@@ -1,11 +1,11 @@
 HandyDevServer
 ===================
 A simple web server with handy hooks for setting up test environments for web development.
-###Installation &nbsp;  [![npm version](https://badge.fury.io/js/handydevserver.svg)](http://badge.fury.io/js/handydevserver)
+### Installation &nbsp;  [![npm version](https://badge.fury.io/js/handydevserver.svg)](http://badge.fury.io/js/handydevserver)
 ```sh
 npm install handydevserver
 ```
-###Simple Usage
+### Simple Usage
 Call the constructor with a port to run on, and an array of folders to look for files in.
 ```javascript
 var handydevserver = require("handydevserver");
@@ -13,7 +13,7 @@ var handydevserver = require("handydevserver");
 // Run on port 8080
 handydevserver(8080, ['./dist', './smoketest', './gateway'])
 ```
-###Simulated server delay
+### Simulated server delay
 To simulate latency, add a ``latency`` attribute with a delay value (in ms):
 ```javascript
 handydevserver(8080, ['./dist', './smoketest', './gateway'], {
@@ -26,14 +26,14 @@ handydevserver(8080, ['./dist', './smoketest', './gateway'], {
     latency: [500, 2500]
 })
 ```
-###Ignore files/folders
+### Ignore files/folders
 To remove certain files or folders for directory listings, add an ``ignore`` array of strings. These are wildcards, so if you specify the string "hello" it would ignore things like: "hello_world", "hello_america", etc:
 ```javascript
 handydevserver(8080, ['./dist', './smoketest', './gateway'], {
     ignore: ['node_modules', '.svn']
 })
 ```
-###Hooks
+### Hooks
 You can intercept text files (CSS, HTML, JS, etc) before they get delivered to the browser incase you want to change them. To do this, pass a config object to your call to the constructor:
 ```javascript
 handydevserver(
@@ -60,7 +60,7 @@ handydevserver(
       }
     });
 ```
-###Custom Headers
+### Custom Headers
 You can add your own custom headers to responses by adding a ``headers`` object to your configuration:
 ```javascript
 handydevserver(
@@ -70,7 +70,7 @@ handydevserver(
       headers: {'mycustomheader':'somevalue'}
     });
 ```
-###SSL
+### SSL
 You can also run an HTTPS server by using the self-signed cert feature. Note: you will need to add an exception to any certificate errors that occur in your browser.
 ```javascript
 handydevserver(443, [/*dirs*/], { ssl: true });
